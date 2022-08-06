@@ -22,12 +22,15 @@ const app = express();
 // import of path
 const path = require('path');
 
+// import router user
+const userRoutes = require('./routes/user')
+
 // connection to the DB
 mongoose.connect(`mongodb+srv://${mongodbId}:${mongodbPassword}@${mongodbServer}/?retryWrites=true&w=majority`,
 { useNewUrlParser: true,
     useUnifiedTopology: true 
 })
-  .then(() => console.log('Connexion to MongoDB successed'))
+  .then(() => console.log('Connexion to MongoDB is successfull'))
   .catch(() => console.log('Connexion to MongoDB failed'));
 
 
@@ -37,12 +40,14 @@ app.use(express.json());
 //header configuration 
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Accept, Content, Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
   });
 
 
+// login and signup route
+app.use('/api/auth', userRoutes)
 
 // Give an acces for server.js
 module.exports = app;
