@@ -49,3 +49,27 @@ exports.DeleteSauce = (req, res, next) => {
     })
     .catch( error => {res.status(500).json({ error : error })})
 }
+
+// middleware that modify a sauce 
+exports.ModifySauce = (req, res, next) => { 
+    const sauceObj = req.file ? {
+        ...JSON.parse(req.body.sauce),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    } : {
+        ...req.body
+    }
+    delete sauceObj._userdId;
+    Sauce.findOne({_id: req.params.id})
+    .then(sauce => {
+        if(sauce.userId != req.auth.userId) {
+            res.status(401).json({ message : 'opération non authorisée' })
+        } else {
+            Sauce.updateOne({_id: req.params.id}, {...sauceObj, _id : req.params.id})
+            .then (() => res.status(200).json({ message : 'Sauce modifiée' }))
+            .catch( error => res.status(401).json({ error : error }))
+        }
+    })
+    .catch(error => {
+        error.status(400).json({ error : error })
+    })
+}

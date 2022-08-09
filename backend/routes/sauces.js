@@ -11,7 +11,7 @@ const auth = require('../middleware/auth');
 const multer = require('../middleware/multer');
 
 //import sauce controller
-const sauceCtrl = require('../controllers/sauce')
+const sauceCtrl = require('../controllers/sauce');
 
 router.get('/', auth, sauceCtrl.getAllSauces);
 
@@ -20,5 +20,7 @@ router.get('/:id', auth, sauceCtrl.getOneSauce);
 router.post('/', auth, multer, sauceCtrl.CreateSauce);
 
 router.delete('/:id', auth, sauceCtrl.DeleteSauce);
+
+router.put('/:id', auth, multer, sauceCtrl.ModifySauce);
 
 module.exports = router;
