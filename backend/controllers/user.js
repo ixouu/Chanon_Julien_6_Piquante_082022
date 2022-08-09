@@ -3,7 +3,8 @@ const dotenv = require("dotenv").config();
 
 // import the secrets keys 
 const secretKey = process.env.SECRETKEY;
-const hmacKey = process.env.HMACKEY
+const hmacKey = process.env.HMACKEY;
+const salt = process.env.SALT;
 
 // import bcrypt
 const bcrypt = require('bcrypt');
@@ -21,7 +22,7 @@ const cryptoJS = require('crypto-js');
 exports.signup = (req, res, next) => {
     let encryptingEmail = cryptoJS.HmacSHA512(req.body.email, hmacKey);
     let hashEmail = encryptingEmail.toString(cryptoJS.enc.Base64);
-    bcrypt.hash(req.body.password, 10)
+    bcrypt.hash(req.body.password, salt)
     .then(function(hash) {
         const user = new User({
             email: hashEmail,
@@ -38,7 +39,7 @@ exports.signup = (req, res, next) => {
 exports.login = (req, res, next) =>{
     let encryptingEmail = cryptoJS.HmacSHA512(req.body.email, hmacKey);
     let hashEmail = encryptingEmail.toString(cryptoJS.enc.Base64);
-    console.log(cryptoJS.AES.decrypt(hashEmail, hmacKey))
+    // console.log(cryptoJS.AES.decrypt(hashEmail, hmacKey))
     User.findOne({ email: hashEmail })
     .then(user => {
         if (!user) {
@@ -58,7 +59,7 @@ exports.login = (req, res, next) =>{
                     )
                 });
             })
-            .catch(error => res.status(500).json({ error }));
+            .catch(error => res.status(500).json({ error : error  }));
     })
-    .catch(error => res.status(500).json({ error }));
+    .catch(error => res.status(500).json({ error : error }));
 };

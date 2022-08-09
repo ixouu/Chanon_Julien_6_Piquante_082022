@@ -1,6 +1,9 @@
 // import of multer package
 const multer = require('multer');
 
+//import of path 
+const path = require('path');
+
 // Creation of a lib that aims to manage image's extensions 
 const MIME_TYPES = {
     'image/jpg' : 'jpg',
@@ -14,7 +17,8 @@ const storage = multer.diskStorage({
         callback(null, 'images')
     },
     filename : (req, file, callback) =>{
-        const name = file.originalname.split(' ').join('_');
+        const NameWithoutExtension = path.parse(file.originalname).name;
+        const name = NameWithoutExtension.split(' ').join('_');
         const extension = MIME_TYPES[file.mimetype];
         callback(null, name + Date.now() + '.' + extension)
     }
