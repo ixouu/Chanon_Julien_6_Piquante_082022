@@ -7,6 +7,7 @@ const jsonwebtoken = require('jsonwebtoken');
 // import the secret key 
 const secretKey = process.env.SECRETKEY;
 
+// Verifies the token 
 module.exports = (req, res, next) => {
     try{
         const token = req.headers.authorization.split(' ')[1];

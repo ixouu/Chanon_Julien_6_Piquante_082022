@@ -4,7 +4,6 @@ const dotenv = require("dotenv").config();
 // import the secrets keys 
 const secretKey = process.env.SECRETKEY;
 const hmacKey = process.env.HMACKEY;
-const salt = process.env.SALT;
 
 // import bcrypt
 const bcrypt = require('bcrypt');
@@ -22,7 +21,7 @@ const cryptoJS = require('crypto-js');
 exports.signup = (req, res, next) => {
     let encryptingEmail = cryptoJS.HmacSHA512(req.body.email, hmacKey);
     let hashEmail = encryptingEmail.toString(cryptoJS.enc.Base64);
-    bcrypt.hash(req.body.password, salt)
+    bcrypt.hash(req.body.password, 10)
     .then(function(hash) {
         const user = new User({
             email: hashEmail,

@@ -58,7 +58,7 @@ app.use(express.json());
 // login and signup route
 app.use('/api/auth', userRoutes)
 
-// products route
+// Sauce route
 app.use('/api/sauces', saucesRoutes)
 
 // product route
