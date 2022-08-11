@@ -23,4 +23,6 @@ router.delete('/:id', auth, sauceCtrl.DeleteSauce);
 
 router.put('/:id', auth, multer, sauceCtrl.ModifySauce);
 
+router.post('/:id/like', auth, sauceCtrl.Likes)
+
 module.exports = router;

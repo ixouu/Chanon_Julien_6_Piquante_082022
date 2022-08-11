@@ -28,21 +28,23 @@ const app = express();
 const path = require('path');
 
 // import router user
-const userRoutes = require('./routes/user')
+const userRoutes = require('./routes/user');
 
 // import router sauces
-const saucesRoutes = require('./routes/sauces')
-
-
+const saucesRoutes = require('./routes/sauces');
 
 // connection to the DB
 mongoose.connect(PiquanteUri,
-//<protocol>://<USER>:<PWD>@<SERVER>[:<PORT>]/<ENDPOINT>[?<PARAMS>]
 { useNewUrlParser: true,
     useUnifiedTopology: true 
 })
   .then(() => console.log('Connexion to MongoDB is successfull'))
   .catch(() => console.log('Connexion to MongoDB failed'));
+
+// DB error handler
+mongoose.connection.on("error", (err) => {
+  console.error('error : '+ err)
+})
 
 //Intercept all request who have a json contentType to be able to use tu body.req
 app.use(express.json());
@@ -60,9 +62,6 @@ app.use('/api/auth', userRoutes)
 
 // Sauce route
 app.use('/api/sauces', saucesRoutes)
-
-// product route
-// app.use('/api/sauces/:id', saucesRoutes)
 
 // define the path where the image will be store
 app.use('/images', express.static(path.join(__dirname, 'images')));

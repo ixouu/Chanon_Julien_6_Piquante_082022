@@ -2,7 +2,7 @@
 const dotenv = require("dotenv").config();
 
 // Define the port form env Variable
-const developmentPort = process.env.PORT || 3000;
+const developmentPort = process.env.PORT;
 
 // import of http Node package
 const http = require('http');
