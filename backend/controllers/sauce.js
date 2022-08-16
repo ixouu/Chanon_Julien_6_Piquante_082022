@@ -58,6 +58,7 @@ exports.ModifySauce = (req, res, next) => {
         ...req.body
     }
     delete sauceObj._userdId;
+    // delete l id egalement
     Sauce.findOne({ _id: req.params.id })
         .then(sauce => {
             if (sauce.userId != req.auth.userId) {

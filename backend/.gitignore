@@ -6,4 +6,5 @@
 !.env.example
 
 #images
-/images
+/images/*
+!/images/.gitkeep
