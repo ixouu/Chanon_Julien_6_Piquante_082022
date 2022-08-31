@@ -4,134 +4,170 @@ const Sauce = require('../models/Sauces');
 // import node package filesystem
 const fs = require('fs');
 
+const Sauces = require('../models/Sauces');
+
+
 // middleware to get a sauce based on the ID
-exports.getOneSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id })
-        .then(sauce => res.status(200).send(sauce))
-        .catch(error => res.status(401).json({ error: error }));
+exports.getOneSauce = async (req, res, next) => {
+    try {
+        const sauce = await Sauce.findOne({ _id: req.params.id })
+        if (!sauce){
+            res.status(404).json({ message: 'sauce not found' })
+        }
+        res.status(200).send(sauce)
+    } catch (error) {
+        return error => res.status(500).json({ error })
+    }
 }
 
-// middleware to get the array of sauces
-exports.getAllSauces = (req, res, next) => {
-    Sauce.find()
-        .then(sauces => res.status(200).send(sauces))
-        .catch(error => res.status(401).json({ error: error }));
+// middleware to get all sauces
+exports.getAllSauces = async (req, res, next) => {
+    try {
+        const sauces = await Sauce.find()
+        res.status(200).send(sauces)
+        if (!sauces){
+            res.status(404).json({ message: 'sauces not found' })
+        }
+    } catch (error) {
+        return error => res.status(500).json({ error })
+    }
 }
 
 // middleware  who return the sauce with the ID
-exports.CreateSauce = (req, res, next) => {
-    const sauceObj = JSON.parse(req.body.sauce)
-    const sauce = new Sauce({
-        ...sauceObj,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
-    });
-    sauce.save()
-        .then(() => res.status(201).json({ message: 'Objet créé' }))
-        .catch((error) => res.status(400).json({ error: error }))
+exports.createSauce = async (req, res, next) => {
+    try {
+        const sauceObj = await JSON.parse(req.body.sauce);
+        if (!sauceObj) {
+            return res.status(400).json({ message: ' missing data ' })
+        }
+        const findSauce = await Sauce.findOne({ _id: req.params.id })
+        if (findSauce !== null) {
+            return res.statuts(403).json({ message: `The sauce ${req.body.name} is already existing` })
+        }
+        delete sauceObj._id;
+        const sauce = new Sauce({
+            ...sauceObj,
+            imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
+        });
+        sauce.save()
+        return res.status(201).json({ message: 'created' })
+    } catch (error) {
+        return error => res.status(500).json({ error })
+    }
 }
 
 // middleware that delete a sauce
-exports.DeleteSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id })
-        .then(sauce => {
-            if (sauce.userId != req.auth.userId) {
-                res.status(401)
-            } else {
-                const filename = sauce.imageUrl.split('/images')[1];
-                fs.unlink(`images/${filename}`, () => {
-                    Sauce.deleteOne({ _id: req.params.id })
-                        .then(() => res.status(200).json({ message: 'Sauce supprimée' }))
-                        .catch(error => res.status(401).json({ error: error }))
-                })
+exports.deleteSauce = async (req, res, next) => {
+    try {
+        const sauce = await Sauce.findById(req.params.id);
+        // verifies the sauce author
+        if (sauce.userId !== req.auth.userId){
+            return res.status(403).json({ message : 'Unauthorized'})
+        } else {        
+            const filename = sauce.imageUrl.split('/images')[1];
+            fs.unlink(`images/${filename}`, async () => {
+            try {
+                const sauceToDelete = await Sauce.deleteOne({ _id: req.params.id })
+                return res.status(200).json({ sauceToDelete, message: 'deleted' });
             }
-        })
-        .catch(error => { res.status(500).json({ error: error }) })
+            catch (error) {
+                res.status(403).json({ error })
+            };
+        })}
+    } catch (error) {
+        res.status(500).json({ error })
+    }
 }
 
 // middleware that modify a sauce 
-exports.ModifySauce = (req, res, next) => {
-    const sauceObj = req.file ? {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    } : {
-        ...req.body
+exports.modifySauce = async (req, res, next) => {
+    try {
+        const sauceObj = req.file ? {
+            ...JSON.parse(req.body.sauce),
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+        } : {
+            ...req.body
+        }
+        delete sauceObj._userdId;
+        delete sauceObj._id;
+        const sauce = await Sauce.findById(req.params.id);
+        // verifies the sauce author
+        if (sauce.userId !== req.auth.userId) {
+            return res.status(403).json({ message: 'Unauthorized' })
+        } else {
+            sauceToUpdate = await Sauce.updateOne({ _id: req.params.id }, { ...sauceObj, _id: req.params.id })
+            return res.status(200).json({ sauceToUpdate, message: 'updated' })
+        }
+    } catch (error) {
+        return res.status(500).json({ error })
     }
-    delete sauceObj._userdId;
-    // delete l id egalement
-    Sauce.findOne({ _id: req.params.id })
-        .then(sauce => {
-            if (sauce.userId != req.auth.userId) {
-                res.status(403)
-            } else {
-                Sauce.updateOne({ _id: req.params.id }, { ...sauceObj, _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Sauce modifiée' }))
-                    .catch(error => res.status(401).json({ error: error }))
-            }
-        })
-        .catch(error => {
-            error.status(400).json({ error: error })
-        })
 }
 
-
 // middleware who manage likes and dislikes into the db
-exports.Likes = (req, res, next) => {
+exports.likes = async (req, res, next) => {
     const like = req.body.like;
     const userId = req.body.userId;
-    Sauce.findOne({ _id: req.params.id })
-        .then(sauce => {
-            let sauceInfos = {
-                usersDisliked: sauce.usersDisliked,
-                usersLiked: sauce.usersLiked,
-                likes: sauce.likes,
-                dislikes: sauce.dislikes
-            }
-            if (like == -1) {
-                if (!sauceInfos.usersLiked.includes(userId) && !sauceInfos.usersDisliked.includes(userId)) {
-                    sauce.updateOne({
-                        $inc: { dislikes: +1 },
-                        $push: { usersDisliked: userId }
-                    })
-                        .then(() => res.status(200).json({ message: 'dislike ajouté' }))
-                        .catch((error) => res.status(400).json({ error: error }));
-                }
-                else {
-                    console.log(new Error('un utilisateur ne peut pas disliker plus d\'une fois'))
-                }
-            } else if (like == 1) {
-                if (!sauceInfos.usersLiked.includes(userId) && !sauceInfos.usersDisliked.includes(userId)) {
-                    sauce.updateOne({
+    try {
+        const sauce = await Sauce.findById(req.params.id);
+        // verifies if the user has authorisations to like or dislike
+        if (sauce.userId !== req.auth.userId){
+            return res.status(403).json({ message : 'Unauthorized'})
+        }
+        // verifies the like value
+        if (Number.isInteger(like) == false || like > 1 || like < -1){
+            return res.status(403).json({ message : 'Unauthorized'});
+        }
+        let sauceInfos = {
+            usersDisliked: sauce.usersDisliked,
+            usersLiked: sauce.usersLiked,
+            likes: sauce.likes,
+            dislikes: sauce.dislikes
+        }
+        switch (like) {
+            case 1:
+                if (sauceInfos.usersLiked.includes(userId) || sauceInfos.usersDisliked.includes(userId)) {
+                    return res.status(403).json({ message: 'invalid action' })
+                } else {
+                    let sauceToUpdate = await sauce.updateOne({
                         $inc: { likes: +1 },
                         $push: { usersLiked: userId }
                     })
-                        .then(() => res.status(200).json({ message: 'like ajouté' }))
-                        .catch((error) => res.status(400).json({ error: error }));
-                } else {
-                    console.log(new Error('un utilisateur ne peut pas liker plus d\'une fois'))
+                    return res.status(200).json({ sauceToUpdate, message: 'like added' })
                 }
-            } else if (like == 0) {
-                if (sauceInfos.usersLiked.includes(userId)) {
-                    sauce.updateOne({
+                break;
+            case -1:
+                if (sauceInfos.usersLiked.includes(userId) || sauceInfos.usersDisliked.includes(userId)) {
+                    return res.status(401).json({ error })
+                } else {
+                    let sauceToUpdate = await sauce.updateOne({
+                        $inc: { dislikes: +1 },
+                        $push: { usersDisliked: userId }
+                    })
+                    return res.status(200).json({ sauceToUpdate, message: 'dislike added' })
+                }
+                break;
+            case 0:
+                if (!sauceInfos.usersLiked.includes(userId) && !sauceInfos.usersDisliked.includes(userId)) {
+                    return res.status(401).json({ error })
+                } else if (sauceInfos.usersLiked.includes(userId)) {
+                    let sauceToUpdate = await sauce.updateOne({
                         $inc: { likes: -1 },
                         $pull: { usersLiked: userId }
                     })
-                        .then(() => res.status(200).json({ message: 'like supprimé' }))
-                        .catch((error) => res.status(400).json({ error: error }));
+                    return res.status(200).json({ sauceToUpdate, message: 'like deleted' })
                 } else if (sauceInfos.usersDisliked.includes(userId)) {
-                    sauce.updateOne({
+                    let sauceToUpdate = await sauce.updateOne({
                         $inc: { dislikes: -1 },
                         $pull: { usersDisliked: userId }
                     })
-                        .then(() => res.status(200).json({ message: 'dislike supprimé' }))
-                        .catch((error) => res.status(400).json({ error: error }));
+                    return res.status(200).json({ sauceToUpdate, message: 'dislike deleted' })
                 }
-            }
-        })
+                break;
+            default:
+                res.status(401).json({ error })
+                break;
+        }
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
 }
-/*else if(sauceInfos.usersLiked.includes(userId) ){
-    sauce.updateOne({
-        $pull: {usersLiked : userId}
-    })
-    .then(() => res.status(200).json({ message: 'dislike ajouté' }))
-} */

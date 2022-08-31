@@ -6,17 +6,17 @@ const path = require('path');
 
 // Creation of a lib that aims to manage image's extensions 
 const MIME_TYPES = {
-    'image/jpg' : 'jpg',
-    'image/jpeg' : 'jpg',
-    'image/png' : 'png'
+    'image/jpg': 'jpg',
+    'image/jpeg': 'jpg',
+    'image/png': 'png'
 };
 
 // Setup of multer , define the folder destination , rename the file with a timestamp
 const storage = multer.diskStorage({
-    destination : (req, file, callback) => {
+    destination: (req, file, callback) => {
         callback(null, 'images')
     },
-    filename : (req, file, callback) =>{
+    filename: (req, file, callback) => {
         const NameWithoutExtension = path.parse(file.originalname).name;
         const name = NameWithoutExtension.split(' ').join('_');
         const extension = MIME_TYPES[file.mimetype];

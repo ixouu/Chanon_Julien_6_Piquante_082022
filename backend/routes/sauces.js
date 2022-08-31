@@ -13,16 +13,53 @@ const multer = require('../middleware/multer');
 //import sauce controller
 const sauceCtrl = require('../controllers/sauce');
 
-router.get('/', auth, sauceCtrl.getAllSauces);
 
+router.use('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    next()});
+router.post('/', auth, multer, sauceCtrl.createSauce);
+
+router.use('/:id', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    next()
+});
 router.get('/:id', auth, sauceCtrl.getOneSauce);
 
-router.post('/', auth, multer, sauceCtrl.CreateSauce);
+router.use('/:id', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    next()
+});
+router.delete('/:id', auth, sauceCtrl.deleteSauce);
 
-router.delete('/:id', auth, sauceCtrl.DeleteSauce);
+router.use('/:id', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'PUT,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    next()
+});
+router.put('/:id', auth, multer, sauceCtrl.modifySauce);
 
-router.put('/:id', auth, multer, sauceCtrl.ModifySauce);
+router.use('/:id/like', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+    next()
+});
+router.post('/:id/like', auth, sauceCtrl.likes)
 
-router.post('/:id/like', auth, sauceCtrl.Likes)
+router.use('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'); 
+    next()
+});
+router.get('/', auth, sauceCtrl.getAllSauces);
+
 
 module.exports = router;
