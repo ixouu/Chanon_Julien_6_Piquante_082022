@@ -24,10 +24,10 @@ exports.getOneSauce = async (req, res, next) => {
 exports.getAllSauces = async (req, res, next) => {
     try {
         const sauces = await Sauce.find()
-        res.status(200).send(sauces)
         if (!sauces){
             res.status(404).json({ message: 'sauces not found' })
         }
+        res.status(200).send(sauces)
     } catch (error) {
         return error => res.status(500).json({ error })
     }

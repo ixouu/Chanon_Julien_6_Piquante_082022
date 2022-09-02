@@ -36,6 +36,9 @@ const saucesRoutes = require('./routes/sauces');
 // import rateLimit 
 const rateLimit = require('express-rate-limit');
 
+// import helmet
+const helmet = require("helmet");
+
 // limit api calls
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -58,8 +61,17 @@ mongoose.connection.on("error", (err) => {
   console.error('error : ' + err)
 })
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+  next();
+});
+
 //Intercept all request who have a json contentType to be able to use tu body.req
 app.use(express.json());
+
+//use helmet to securse http headers
+app.use(helmet());
 
 // login and signup route
 app.use('/api/auth', apiLimiter, userRoutes)
