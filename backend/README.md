@@ -20,3 +20,4 @@ Développer une application web nommée "Piquante" dans laquelle les utilisateur
 8. Exécuter npm run start à partir du répertoire /frontend
 9. Lancer votre navigateur web et visitez l'adresse http://localhost:4200/
 
+10. Votre mot de passe doit contenir plus de 8 caractères et au minimum 1 majuscule, 1 chiffre et 1 caractère special

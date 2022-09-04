@@ -1,3 +1,5 @@
+'use strict';
+
 // import of mongoose
 const mongoose = require('mongoose');
 

@@ -1,3 +1,5 @@
+'use strict';
+
 // import of multer package
 const multer = require('multer');
 

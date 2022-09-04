@@ -1,3 +1,5 @@
+'use strict';
+
 // load env variables
 const dotenv = require("dotenv").config();
 
