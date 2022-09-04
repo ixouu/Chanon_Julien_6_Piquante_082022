@@ -1,3 +1,5 @@
+'use strict';
+
 // load env variables
 const dotenv = require("dotenv").config();
 
@@ -47,6 +49,9 @@ const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 
+// import cors package
+const cors = require('cors');
+
 // connection to the DB
 mongoose.connect(PiquanteUri,
   {
@@ -61,17 +66,21 @@ mongoose.connection.on("error", (err) => {
   console.error('error : ' + err)
 })
 
+// set the headers
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
   next();
 });
 
 //Intercept all request who have a json contentType to be able to use tu body.req
 app.use(express.json());
+app.use(cors());
 
 //use helmet to securse http headers
-app.use(helmet());
+app.use(helmet.hidePoweredBy());
+app.use(helmet.crossOriginResourcePolicy({ policy: "same-site" }));
 
 // login and signup route
 app.use('/api/auth', apiLimiter, userRoutes)

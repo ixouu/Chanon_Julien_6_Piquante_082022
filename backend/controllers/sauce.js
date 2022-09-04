@@ -1,10 +1,11 @@
+'use strict';
+
 // import of sauce model
 const Sauce = require('../models/Sauces');
 
 // import node package filesystem
 const fs = require('fs');
 
-const Sauces = require('../models/Sauces');
 
 
 // middleware to get a sauce based on the ID
@@ -80,29 +81,31 @@ exports.deleteSauce = async (req, res, next) => {
 }
 
 // middleware that modify a sauce 
-exports.modifySauce = async (req, res, next) => {
-    try {
-        const sauceObj = req.file ? {
-            ...JSON.parse(req.body.sauce),
-            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        } : {
-            ...req.body
+exports.modifySauce = (req, res, next) => {
+    const sauceContent = req.file
+      ? {
+          // parse to be able to update image
+          ...JSON.parse(req.body.sauce),
+          imageUrl: `${req.protocol}://${req.get('host')}/images/${
+            req.file.filename
+          }`,
         }
-        delete sauceObj._userdId;
-        delete sauceObj._id;
-        const sauce = await Sauce.findById(req.params.id);
-        // verifies the sauce author
-        if (sauce.userId !== req.auth.userId) {
-            return res.status(403).json({ message: 'Unauthorized' })
-        } else {
-            sauceToUpdate = await Sauce.updateOne({ _id: req.params.id }, { ...sauceObj, _id: req.params.id })
-            return res.status(200).json({ sauceToUpdate, message: 'updated' })
-        }
-    } catch (error) {
-        return res.status(500).json({ error })
-    }
-}
-
+      : { ...req.body };
+    delete sauceContent._userId;
+    Sauce.findById(req.params.id).then(sauce => {
+      if (sauce.userId !== req.auth.userId) {
+        res.status(401).json({ message: 'Unauthorized' });
+      } else {
+        Sauce.findByIdAndUpdate(req.params.id, {
+          ...sauceContent,
+          _id: req.params.id,
+        })
+          .then(() => res.status(200).json({ message: 'Sauce update !' }))
+          .catch(error => res.status(401).json({ error }));
+      }
+    });
+};
+  
 // middleware who manage likes and dislikes into the db
 exports.likes = async (req, res, next) => {
     const like = req.body.like;
