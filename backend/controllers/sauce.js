@@ -107,70 +107,54 @@ exports.modifySauce = (req, res, next) => {
 };
   
 // middleware who manage likes and dislikes into the db
-exports.likes = async (req, res, next) => {
-    const like = req.body.like;
-    const userId = req.body.userId;
-    try {
-        const sauce = await Sauce.findById(req.params.id);
-        // verifies if the user has authorisations to like or dislike
-        if (sauce.userId !== req.auth.userId){
-            return res.status(403).json({ message : 'Unauthorized'})
+exports.likes = (req, res) => {
+    Sauce.findById(req.params.id)
+      .then(sauce => {
+        switch (req.body.like) {
+          case 0:
+            // verifies if the user has authorisations to like or dislike
+            if (sauce.usersLiked.includes(req.auth.userId)) {
+              // return index of userId in liked array
+              const indexOfUser = sauce.usersLiked.indexOf(req.auth.userId);
+              Sauce.findByIdAndUpdate(req.params.id, {
+                ...sauce,
+                likes: sauce.likes--,
+                // remove current userId from liked array
+                usersLiked: sauce.usersLiked.splice(indexOfUser, 1),
+              })
+                .then(() => res.status(200).json({ message: 'Sauce unliked' }))
+                .catch(error => res.status(401).json({ error }));
+            }
+            if (sauce.usersDisliked.includes(req.auth.userId)) {
+              const indexOfUser = sauce.usersDisliked.indexOf(req.auth.userId);
+              Sauce.findByIdAndUpdate(req.params.id, {
+                ...sauce,
+                dislikes: sauce.dislikes--,
+                usersDisliked: sauce.usersDisliked.splice(indexOfUser, 1),
+              })
+                .then(() => res.status(200).json({ message: 'Sauce undisliked' }))
+                .catch(error => res.status(401).json({ error }));
+            }
+            break;
+          case 1:
+            Sauce.findByIdAndUpdate(req.params.id, {
+              ...sauce,
+              likes: sauce.likes++,
+              usersLiked: sauce.usersLiked.push(req.auth.userId),
+            })
+              .then(() => res.status(200).json({ message: 'Sauce liked !' }))
+              .catch(error => res.status(401).json({ error }));
+            break;
+          case -1:
+            Sauce.findByIdAndUpdate(req.params.id, {
+              ...sauce,
+              dislikes: sauce.dislikes++,
+              usersDisliked: sauce.usersDisliked.push(req.auth.userId),
+            })
+              .then(() => res.status(200).json({ message: 'Sauce disliked...' }))
+              .catch(error => res.status(401).json({ error }));
+            break;
         }
-        // verifies the like value
-        if (Number.isInteger(like) == false || like > 1 || like < -1){
-            return res.status(403).json({ message : 'Unauthorized'});
-        }
-        let sauceInfos = {
-            usersDisliked: sauce.usersDisliked,
-            usersLiked: sauce.usersLiked,
-            likes: sauce.likes,
-            dislikes: sauce.dislikes
-        }
-        switch (like) {
-            case 1:
-                if (sauceInfos.usersLiked.includes(userId) || sauceInfos.usersDisliked.includes(userId)) {
-                    return res.status(403).json({ message: 'invalid action' })
-                } else {
-                    let sauceToUpdate = await sauce.updateOne({
-                        $inc: { likes: +1 },
-                        $push: { usersLiked: userId }
-                    })
-                    return res.status(200).json({ sauceToUpdate, message: 'like added' })
-                }
-                break;
-            case -1:
-                if (sauceInfos.usersLiked.includes(userId) || sauceInfos.usersDisliked.includes(userId)) {
-                    return res.status(401).json({ error })
-                } else {
-                    let sauceToUpdate = await sauce.updateOne({
-                        $inc: { dislikes: +1 },
-                        $push: { usersDisliked: userId }
-                    })
-                    return res.status(200).json({ sauceToUpdate, message: 'dislike added' })
-                }
-                break;
-            case 0:
-                if (!sauceInfos.usersLiked.includes(userId) && !sauceInfos.usersDisliked.includes(userId)) {
-                    return res.status(401).json({ error })
-                } else if (sauceInfos.usersLiked.includes(userId)) {
-                    let sauceToUpdate = await sauce.updateOne({
-                        $inc: { likes: -1 },
-                        $pull: { usersLiked: userId }
-                    })
-                    return res.status(200).json({ sauceToUpdate, message: 'like deleted' })
-                } else if (sauceInfos.usersDisliked.includes(userId)) {
-                    let sauceToUpdate = await sauce.updateOne({
-                        $inc: { dislikes: -1 },
-                        $pull: { usersDisliked: userId }
-                    })
-                    return res.status(200).json({ sauceToUpdate, message: 'dislike deleted' })
-                }
-                break;
-            default:
-                res.status(401).json({ error })
-                break;
-        }
-    } catch (error) {
-        return res.status(500).json({ error })
-    }
-}
+      })
+      .catch(error => res.status(401).json({ error }));
+  };
